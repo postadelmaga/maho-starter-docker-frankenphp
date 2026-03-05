@@ -149,9 +149,6 @@ $dc run --rm app ./maho index:reindex:all
 echo "Flushing cache..."
 $dc run --rm app ./maho cache:flush
 
-echo "Copy caddy-root.crt..."
-docker cp maho_app:/data/caddy/pki/authorities/local/root.crt ./caddy-root.crt
-
 echo ""
 echo "✅ Setup complete!"
 echo ""
@@ -162,3 +159,13 @@ echo ""
 echo "phpMyAdmin URL: ${PHPMYADMIN_URL}"
 echo "phpMyAdmin login:  $MYSQL_USER : $MYSQL_PASSWORD"
 echo ""
+
+
+echo ""
+echo "Copying caddy-root.crt to the current directory..."
+docker cp maho_app:/data/caddy/pki/authorities/local/root.crt ./caddy-root.crt
+read -p "Would you like to add the Caddy CA certificate to Chrome via certutil? [y/N] " add_cert
+if [[ "$add_cert" == "y" || "$add_cert" == "Y" ]]; then
+  certutil -d sql:$HOME/.pki/nssdb -A -t "CT,," -n "Caddy Local CA" -i ./caddy-root.crt
+  echo "✅ Certificate added to Chrome."
+fi
