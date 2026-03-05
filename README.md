@@ -146,12 +146,6 @@ Trust the certificate (step 3 above), then navigate to your frontend URL and fol
 
 **Use Secure URLs:** select **Yes** — Caddy handles SSL automatically.
 
----
-
-## Key differences from OpenMage
-
-| Aspect | OpenMage | Maho |
-|---|---|---|
 | Composer package | `openmage/magento-lts` | `mahocommerce/maho-starter` |
 | Installer | `php install.php` | `./maho install` |
 | Document root | project root | `public/` subdirectory |
