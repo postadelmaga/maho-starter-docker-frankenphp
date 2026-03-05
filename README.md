@@ -4,9 +4,11 @@ A Docker setup for running [Maho](https://mahocommerce.com/) locally using [Fran
 
 ## Stack
 
-- **FrankenPHP** 1 / PHP 8.3 (Alpine) — includes Caddy with `tls internal` (local HTTPS) + Xdebug
-- **MariaDB** LTS
-- **phpMyAdmin**
+| Service    | Image                                   | Version           |
+|------------|-----------------------------------------|-------------------|
+| app        | `dunglas/frankenphp` (Alpine-based)     | `1-php8.3-alpine` |
+| db         | `mariadb`                               | `lts`             |
+| phpmyadmin | `phpmyadmin`                            | `5.2`             |
 
 ## Requirements
 
@@ -146,6 +148,12 @@ Trust the certificate (step 3 above), then navigate to your frontend URL and fol
 
 **Use Secure URLs:** select **Yes** — Caddy handles SSL automatically.
 
+---
+
+## Key differences from OpenMage
+
+| Aspect | OpenMage | Maho |
+|---|---|---|
 | Composer package | `openmage/magento-lts` | `mahocommerce/maho-starter` |
 | Installer | `php install.php` | `./maho install` |
 | Document root | project root | `public/` subdirectory |
