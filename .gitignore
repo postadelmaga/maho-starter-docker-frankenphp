@@ -4,3 +4,4 @@
 .vscode/
 src/
 .env
+caddy-root.crt
