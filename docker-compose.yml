@@ -4,7 +4,7 @@ services:
       context: .
       args:
         USER_ID: ${USER_ID:-1000}
-    container_name: openmage_app
+    container_name: maho_app
     restart: unless-stopped
     ports:
       - "80:80"
@@ -15,7 +15,7 @@ services:
       - ADMIN_HOST=${ADMIN_HOST}
       - PHPMYADMIN_HOST=${PHPMYADMIN_HOST}
     volumes:
-      - ./src:/app/public # Place your OpenMage files inside the ./src directory
+      - ./src:/app # Maho project root (public/ subdir is the document root)
       - ./Caddyfile:/etc/frankenphp/Caddyfile
       - ./php.ini:/usr/local/etc/php/conf.d/custom.ini
       - caddy_data:/data
@@ -23,13 +23,13 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
-      - openmage-network
+      - maho-network
     depends_on:
       - db
 
   db:
     image: mariadb:lts
-    container_name: openmage_db
+    container_name: maho_db
     restart: unless-stopped
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
@@ -41,11 +41,11 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     networks:
-      - openmage-network
+      - maho-network
 
   phpmyadmin:
     image: phpmyadmin:5.2
-    container_name: openmage_phpmyadmin
+    container_name: maho_phpmyadmin
     restart: unless-stopped
     environment:
       - PMA_HOST=db
@@ -53,12 +53,12 @@ services:
     ports:
       - "8080:80"
     networks:
-      - openmage-network
+      - maho-network
     depends_on:
       - db
 
 networks:
-  openmage-network:
+  maho-network:
     driver: bridge
 
 volumes:

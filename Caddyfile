@@ -35,7 +35,7 @@ http://{$FRONTEND_HOST}, http://{$PHPMYADMIN_HOST} {
     respond @admin 404
 
     # Block direct access to PHP entry points
-    @blocked_php path /api.php /get.php /install.php /index.php
+    @blocked_php path /api.php get.php /install.php /index.php
     respond @blocked_php 404
 
     # Block private media directories
@@ -121,5 +121,5 @@ http://{$FRONTEND_HOST}, http://{$PHPMYADMIN_HOST} {
 # ─── PHPMYADMIN ───────────────────────────────────────────────────────────────
 {$PHPMYADMIN_HOST} {
     tls internal
-    reverse_proxy openmage_phpmyadmin:80
+    reverse_proxy maho_phpmyadmin:80
 }
