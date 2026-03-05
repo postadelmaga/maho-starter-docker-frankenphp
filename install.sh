@@ -1,19 +1,6 @@
 #!/bin/bash
 set -e
 
-# Copy env.example to .env if it doesn't exist
-if [ ! -f .env ]; then
-    cp env.example .env
-    echo ".env created from env.example"
-fi
-
-# Set UID to the current user's value
-sed -i "s/^USER_ID=.*/USER_ID=$(id -u)/" .env
-echo "USER_ID=$(id -u) set in .env"
-
-# Create src directory if it doesn't exist
-mkdir -p src
-
 # Detect "docker compose" or "docker-compose"
 dc="docker compose"
 if ! docker compose version >/dev/null 2>&1; then
@@ -24,6 +11,16 @@ if ! docker compose version >/dev/null 2>&1; then
     dc="docker-compose"
   fi
 fi
+
+# Copy env.example to .env if it doesn't exist
+if [ ! -f .env ]; then
+    cp env.example .env
+    echo ".env created from env.example"
+fi
+
+# Set UID to the current user's value
+sed -i "s/^USER_ID=.*/USER_ID=$(id -u)/" .env
+echo "USER_ID=$(id -u) set in .env"
 
 # Load .env if exists
 test -f .env && source .env
@@ -54,9 +51,9 @@ if [[ "$1" = "--reset" ]]; then
     echo "Aborted."
     exit 0
   fi
-  echo "Wiping previous installation..."
+  echo "Wiping src/ & containers & volumes..."
+  rm -rf ./src
   $dc down --volumes --remove-orphans
-  rm -rf ./src && mkdir ./src
 fi
 
 # Check if already installed
@@ -79,6 +76,9 @@ if [[ ${#ADMIN_PASSWORD} -lt 14 ]]; then
   echo "Admin password must be at least 14 characters."
   exit 1
 fi
+
+# Create src directory if it doesn't exist
+mkdir -p src
 
 echo "Building containers..."
 $dc build
@@ -127,12 +127,6 @@ fi
 echo "Installing Maho LTS..."
 $dc run --rm app "${INSTALL_CMD[@]}"
 
-echo "Reindexing..."
-$dc run --rm app ./maho index:reindex:all
-
-echo "Flushing cache..."
-$dc run --rm app ./maho cache:flush
-
 # Maho stores the base_url at the 'default' scope, which is used by the frontend.
 # To make the admin panel work on a separate domain, we set the base_url at the
 # 'stores' scope for store_id=0 (the admin store). Maho's config inheritance
@@ -148,7 +142,15 @@ INSERT INTO core_config_data (scope, scope_id, path, value) VALUES
 ('stores',  0, 'web/unsecure/base_url', '$ADMIN_URL'),
 ('stores',  0, 'web/secure/base_url',   '$ADMIN_URL');
 "
+
+echo "Reindexing..."
+$dc run --rm app ./maho index:reindex:all
+
+echo "Flushing cache..."
 $dc run --rm app ./maho cache:flush
+
+echo "Copy caddy-root.crt..."
+docker cp maho_app:/data/caddy/pki/authorities/local/root.crt ./caddy-root.crt
 
 echo ""
 echo "✅ Setup complete!"

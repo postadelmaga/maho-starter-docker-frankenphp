@@ -10,10 +10,8 @@ services:
       - "80:80"
       - "443:443"
       - "443:443/udp"
-    environment:
-      - FRONTEND_HOST=${FRONTEND_HOST}
-      - ADMIN_HOST=${ADMIN_HOST}
-      - PHPMYADMIN_HOST=${PHPMYADMIN_HOST}
+    env_file:
+      - .env # import eviroment variable
     volumes:
       - ./src:/app # Maho project root (public/ subdir is the document root)
       - ./Caddyfile:/etc/frankenphp/Caddyfile
