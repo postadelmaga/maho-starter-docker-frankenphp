@@ -1,0 +1,6 @@
+.agent/
+.claude
+.phpstorm.meta.php/
+.vscode/
+src/
+.env

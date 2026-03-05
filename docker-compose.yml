@@ -1,0 +1,67 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        USER_ID: ${USER_ID:-1000}
+    container_name: openmage_app
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      - FRONTEND_HOST=${FRONTEND_HOST}
+      - ADMIN_HOST=${ADMIN_HOST}
+      - PHPMYADMIN_HOST=${PHPMYADMIN_HOST}
+    volumes:
+      - ./src:/app/public # Place your OpenMage files inside the ./src directory
+      - ./Caddyfile:/etc/frankenphp/Caddyfile
+      - ./php.ini:/usr/local/etc/php/conf.d/custom.ini
+      - caddy_data:/data
+      - caddy_config:/config
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - openmage-network
+    depends_on:
+      - db
+
+  db:
+    image: mariadb:lts
+    container_name: openmage_db
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - openmage-network
+
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    container_name: openmage_phpmyadmin
+    restart: unless-stopped
+    environment:
+      - PMA_HOST=db
+      - PMA_PORT=3306
+    ports:
+      - "8080:80"
+    networks:
+      - openmage-network
+    depends_on:
+      - db
+
+networks:
+  openmage-network:
+    driver: bridge
+
+volumes:
+  db_data:
+  caddy_data:
+  caddy_config:

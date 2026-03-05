@@ -1,0 +1,125 @@
+{
+    frankenphp
+}
+
+# ─── HTTP → HTTPS redirect ────────────────────────────────────────────────────
+# Redirect all insecure requests to HTTPS except the admin domain,
+# which may be accessed over HTTP in some internal/proxy setups.
+http://{$FRONTEND_HOST}, http://{$PHPMYADMIN_HOST} {
+    redir https://{host}{uri} 301
+}
+
+# ─── FRONTEND ────────────────────────────────────────────────────────────────
+{$FRONTEND_HOST} {
+    tls internal
+
+    root * /app/public
+
+    encode zstd br gzip
+
+    # Security headers
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=15552000;"
+    }
+
+    # Block dot files
+    @dotfiles path_regexp \\/\\.
+    respond @dotfiles 404
+
+    # Block admin on frontend domain
+    @admin path /admin /admin/*
+    respond @admin 404
+
+    # Block direct access to PHP entry points
+    @blocked_php path /api.php /get.php /install.php /index.php
+    respond @blocked_php 404
+
+    # Block private media directories
+    @private_media path /media/customer/* /media/downloadable/* /media/import/*
+    respond @private_media 404
+
+    # Block admin skin on frontend
+    @admin_skin path /skin/adminhtml/* /skin/install/*
+    respond @admin_skin 404
+
+    # Static assets - long cache
+    @static path /skin/* /js/*
+    handle @static {
+        header Cache-Control "public, max-age=31536000"
+        file_server
+    }
+
+    # Media files
+    @media path /media/*
+    handle @media {
+        @media_cacheable path_regexp \.(ico|jpg|jpeg|png|gif|js|css|svg|woff|woff2|ttf|otf|eot)$
+        header @media_cacheable Cache-Control "public, max-age=31536000"
+        file_server
+    }
+
+    # Errors directory - only allow CSS and images
+    @errors_php path_regexp ^/errors/.*\.php$
+    respond @errors_php 404
+
+    php_server {
+        env MAGE_RUN_CODE default
+        env MAGE_RUN_TYPE store
+    }
+}
+
+# ─── ADMIN / BACKEND ─────────────────────────────────────────────────────────
+{$ADMIN_HOST} {
+    tls internal
+
+    root * /app/public
+
+    encode zstd br gzip
+
+    # Security headers
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=15552000;"
+    }
+
+    # Block dot files
+    @dotfiles path_regexp \\/\\.
+    respond @dotfiles 404
+
+    # Block private media directories
+    @private_media path /media/customer/* /media/downloadable/* /media/import/*
+    respond @private_media 404
+
+    # Larger body size for admin uploads
+    request_body {
+        max_size 512MB
+    }
+
+    # Static assets - long cache
+    @static path /skin/* /js/*
+    handle @static {
+        header Cache-Control "public, max-age=31536000"
+        file_server
+    }
+
+    # Redirect root to admin panel
+    @root path /
+    redir @root /index.php/admin 302
+
+    php_server {
+        env MAGE_RUN_CODE admin
+        env MAGE_RUN_TYPE store
+    }
+}
+
+# ─── PHPMYADMIN ───────────────────────────────────────────────────────────────
+{$PHPMYADMIN_HOST} {
+    tls internal
+    reverse_proxy openmage_phpmyadmin:80
+}
