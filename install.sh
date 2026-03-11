@@ -33,6 +33,7 @@ MYSQL_PASSWORD="${MYSQL_PASSWORD:-maho_password}"
 BASE_URL="https://${FRONTEND_HOST}/"
 ADMIN_URL="https://${ADMIN_HOST}/"
 PHPMYADMIN_URL="https://${PHPMYADMIN_HOST}/"
+PHPMYADMIN_ENABLE="${PHPMYADMIN_ENABLE:-1}"
 LOCALE="${LOCALE:-en_US}"
 TIMEZONE="${TIMEZONE:-America/New_York}"
 CURRENCY="${CURRENCY:-USD}"
@@ -156,9 +157,11 @@ echo "Frontend URL: ${BASE_URL}"
 echo "Admin URL:    ${ADMIN_URL}admin"
 echo "Admin login:  $ADMIN_USERNAME : $ADMIN_PASSWORD"
 echo ""
-echo "phpMyAdmin URL: ${PHPMYADMIN_URL}"
-echo "phpMyAdmin login:  $MYSQL_USER : $MYSQL_PASSWORD"
-echo ""
+if [[ "${PHPMYADMIN_ENABLE}" == "1" ]]; then
+  echo "phpMyAdmin URL: ${PHPMYADMIN_URL}"
+  echo "phpMyAdmin login:  $MYSQL_USER : $MYSQL_PASSWORD"
+  echo ""
+fi
 
 
 echo ""

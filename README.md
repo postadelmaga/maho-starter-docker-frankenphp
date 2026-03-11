@@ -182,9 +182,11 @@ Admin only:
 
 ---
 
-## phpMyAdmin
+### phpMyAdmin
 
 Available at `https://maho-phpmyadmin.127.0.0.1.nip.io` (or your configured `PHPMYADMIN_HOST`).
+
+To disable it, set `PHPMYADMIN_ENABLE=0` and remove `phpmyadmin` from `COMPOSE_PROFILES` in your `.env`.
 
 | Field | Value            |
 |-------|------------------|

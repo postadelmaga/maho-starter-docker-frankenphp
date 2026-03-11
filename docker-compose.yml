@@ -46,6 +46,8 @@ services:
     image: phpmyadmin:5.2
     container_name: maho_phpmyadmin
     restart: unless-stopped
+    profiles:
+      - phpmyadmin
     environment:
       - PMA_HOST=db
       - PMA_PORT=3306
