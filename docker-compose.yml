@@ -38,6 +38,7 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+      - ./mariadb.cnf:/etc/mysql/conf.d/maho.cnf  # aggiungi questa
     networks:
       - maho-network
 
