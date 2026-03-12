@@ -79,7 +79,7 @@ if [[ "$MAHO_APP_ENABLE" == "1" ]]; then
 
     echo "Waiting for MariaDB to be ready..."
     for i in $(seq 1 30); do
-      if docker exec ${APPNAME}_db mariadb -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SELECT 1;" >/dev/null 2>&1; then
+      if $dc run --rm app mariadb -h "$DB_HOST" -u "$MYSQL_USER" -p "$MYSQL_PASSWORD" -e "SELECT 1;" >/dev/null 2>&1; then
         echo "  MariaDB is UP!"
         break
       fi
@@ -117,7 +117,7 @@ if [[ "$MAHO_APP_ENABLE" == "1" ]]; then
     $dc run --rm app "${INSTALL_CMD[@]}"
 
     echo "Configuring separate admin URL..."
-    $dc exec -T db mariadb -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "
+    $dc run --rm app mariadb -h "$DB_HOST" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "
     DELETE FROM core_config_data WHERE path IN ('admin/url/use_custom', 'web/unsecure/base_url', 'web/secure/base_url');
     INSERT INTO core_config_data (scope, scope_id, path, value) VALUES
     ('default', 0, 'admin/url/use_custom',  '1'),

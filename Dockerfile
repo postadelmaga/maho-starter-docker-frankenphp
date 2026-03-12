@@ -1,6 +1,6 @@
 FROM dunglas/frankenphp:1-php8.3-alpine
 
-RUN apk add --no-cache bash
+RUN apk add --no-cache bash mariadb-client
 
 RUN install-php-extensions \
     gd \

@@ -30,7 +30,6 @@ services:
     container_name: ${APPNAME}_db
     profiles:
       - full
-      - maho
       - database
     restart: unless-stopped
     environment:
