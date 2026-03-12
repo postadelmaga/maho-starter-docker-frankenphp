@@ -107,12 +107,17 @@ if [[ "$MAHO_APP_ENABLE" = "1" ]]; then
     echo ""
 
     echo "Waiting for MySQL to be ready..."
-    echo ""
-    echo ""
     for i in $(seq 1 30); do
-      sleep 1
-      docker exec {APPNAME}_db mariadb -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SELECT 1;" 2>/dev/null && break
+      if docker exec ${APPNAME}_db mariadb -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SELECT 1;" 2>/dev/null; then
+        echo "MySQL ready!"
+        break
+      fi
       echo "  waiting... ($i/30)"
+      sleep 2
+      if [[ $i -eq 30 ]]; then
+        echo "❌ MySQL did not become ready in time."
+        exit 1
+      fi
     done
 
     # Build the install command
