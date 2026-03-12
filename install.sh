@@ -90,19 +90,25 @@ export COMPOSE_PROFILES="$PROFILES"
 
 echo "Building containers..."
 $dc build
+echo ""
+echo ""     
 
 echo "Starting containers..."
 $dc up -d
-
-echo "Installing Maho via Composer..."
+echo ""
+echo ""
 
 if [[ "$MAHO_APP_ENABLE" = "1" ]]; then
 
     echo "Installing Maho via Composer..."
     # maho-starter puts its files in the project root; the document root will be /app/public
     $dc run --rm app composer create-project mahocommerce/maho-starter /app
+    echo ""
+    echo ""
 
     echo "Waiting for MySQL to be ready..."
+    echo ""
+    echo ""
     for i in $(seq 1 30); do
       sleep 1
       docker exec {APPNAME}_db mariadb -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SELECT 1;" 2>/dev/null && break
@@ -187,19 +193,19 @@ if [[ "$MAHO_APP_ENABLE" = "1" ]]; then
     echo ""
 else
     echo "Maho installation skipped (MAHO_APP_ENABLE is not set to true)."
-
-    if [[ "${DATABASE_ENABLE}" == "1" ]]; then
-      echo "Database login:  $MYSQL_USER : $MYSQL_PASSWORD"
-      echo ""
-      echo ""
-    fi
-
-    if [[ "${REDIS_ENABLE}" == "1" ]]; then
-      echo "Redis login:   : "
-      echo ""
-      echo ""
-    fi
-
 fi
-    echo ""
-    echo ""
+
+if [[ "${DATABASE_ENABLE}" == "1" ]]; then
+  echo "Database login:  $MYSQL_USER : $MYSQL_PASSWORD"
+  echo ""
+  echo ""
+fi
+
+if [[ "${REDIS_ENABLE}" == "1" ]]; then
+  echo "Redis login:   : "
+  echo ""
+  echo ""
+fi
+
+echo ""
+echo ""
