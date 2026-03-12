@@ -108,7 +108,7 @@ if [[ "$MAHO_APP_ENABLE" = "1" ]]; then
 
     echo "Waiting for MySQL to be ready..."
     for i in $(seq 1 30); do
-      if mariadb -h"$DB_HOST" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SELECT 1;" 2>/dev/null; then
+      if mariadb -h "$DB_HOST" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SELECT 1;" 2>/dev/null; then
         echo "MySQL ready!"
         break
       fi
@@ -196,9 +196,6 @@ if [[ "$MAHO_APP_ENABLE" = "1" ]]; then
     fi
     echo ""
     echo ""
-else
-    echo "Maho installation skipped (MAHO_APP_ENABLE is not set to true)."
-fi
 
 if [[ "${DATABASE_ENABLE}" == "1" ]]; then
   echo "Database login:  $MYSQL_USER : $MYSQL_PASSWORD"
