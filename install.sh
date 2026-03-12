@@ -113,6 +113,11 @@ if [[ "$MAHO_APP_ENABLE" == "1" ]]; then
       --admin_password "$ADMIN_PASSWORD"
     )
 
+    # Sample data (optional) - Maho handles download automatically via --sample_data 1
+    if [[ -n "${SAMPLE_DATA:-}" ]]; then
+      INSTALL_CMD+=(--sample_data 1)
+    fi
+
     echo "Installing Maho LTS..."
     $dc run --rm app "${INSTALL_CMD[@]}"
 
