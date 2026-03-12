@@ -4,7 +4,7 @@ services:
       context: .
       args:
         USER_ID: ${USER_ID:-1000}
-    container_name: maho_app
+    container_name: ${APPNAME}_app
     profiles:
       - full
       - maho
@@ -27,7 +27,7 @@ services:
 
   db:
     image: mariadb:lts
-    container_name: maho_db
+    container_name: ${APPNAME}_db
     profiles:
       - full
       - database
@@ -47,7 +47,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: maho_redis
+    container_name: ${APPNAME}_redis
     profiles:
       - full
       - redis
@@ -62,7 +62,7 @@ services:
 
   phpmyadmin:
     image: phpmyadmin:5.2
-    container_name: maho_phpmyadmin
+    container_name: ${APPNAME}_phpmyadmin
     restart: unless-stopped
     profiles:
       - phpmyadmin
