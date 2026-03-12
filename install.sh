@@ -84,6 +84,12 @@ mkdir -p src
 echo "Building containers..."
 $dc build
 
+if [[ "${PHPMYADMIN_ENABLE:-0}" == "1" ]]; then
+  export COMPOSE_PROFILES="phpmyadmin"
+else
+  export COMPOSE_PROFILES=""
+fi
+
 echo "Starting containers..."
 $dc up -d
 
