@@ -31,6 +31,7 @@ services:
     profiles:
       - full
       - maho
+      - database
     restart: unless-stopped
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
