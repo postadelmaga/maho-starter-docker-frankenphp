@@ -54,7 +54,7 @@ if [[ "$1" = "--reset" ]]; then
   fi
   echo "Wiping src/ & containers & volumes..."
   rm -rf ./src
-  $dc down --volumes --remove-orphans
+  $dc --profile '*' down --volumes --remove-orphans
 fi
 
 # Check if already installed
