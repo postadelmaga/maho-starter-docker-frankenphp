@@ -185,7 +185,6 @@ if [[ "$MAHO_APP_ENABLE" = "1" ]]; then
     fi
     echo ""
     echo ""
-
 else
     echo "Maho installation skipped (MAHO_APP_ENABLE is not set to true)."
 
@@ -201,7 +200,6 @@ else
       echo ""
     fi
 
+fi
     echo ""
-
-
-
+    echo ""
