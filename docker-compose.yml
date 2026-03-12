@@ -30,7 +30,7 @@ services:
     container_name: ${APPNAME}_db
     profiles:
       - full
-      - database
+      - maho
     restart: unless-stopped
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
