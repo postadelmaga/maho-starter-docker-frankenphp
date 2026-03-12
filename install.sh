@@ -196,7 +196,7 @@ if [[ "$MAHO_APP_ENABLE" = "1" ]]; then
     fi
     echo ""
     echo ""
-
+fi
 if [[ "${DATABASE_ENABLE}" == "1" ]]; then
   echo "Database login:  $MYSQL_USER : $MYSQL_PASSWORD"
   echo ""
