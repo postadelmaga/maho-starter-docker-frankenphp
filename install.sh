@@ -88,7 +88,7 @@ if [[ "$MAHO_APP_ENABLE" == "1" ]]; then
        exit 1
      fi
      echo "  waiting... ($i/30)"
-     fixsleep 1
+     sleep 1
    done
 
     # Preparazione comando installazione
