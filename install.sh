@@ -77,19 +77,19 @@ if [[ "$MAHO_APP_ENABLE" == "1" ]]; then
     echo "Installing Maho via Composer..."
     $dc run --rm app composer create-project mahocommerce/maho-starter /app
 
-    # echo "Waiting for MariaDB to be ready..."
-    # for i in $(seq 1 30); do
-    #   if $dc run --rm app mariadb -h "$DB_HOST" -u "$MYSQL_USER" -p "$MYSQL_PASSWORD" -e "SELECT 1;" >/dev/null 2>&1; then
-    #     echo "  MariaDB is UP!"
-    #     break
-    #   fi
-    #   if [ $i -eq 30 ]; then
-    #     echo "  ERROR: MariaDB timeout after 30s"
-    #     exit 1
-    #   fi
-    #   echo "  waiting... ($i/30)"
-    #   sleep 1
-    # done
+   echo "Waiting for MariaDB to be ready..."
+   for i in $(seq 1 30); do
+     if $dc run --rm app bash -c "echo > /dev/tcp/$DB_HOST/3306" 2>/dev/null; then
+       echo "  MariaDB is UP!"
+       break
+     fi
+     if [ $i -eq 30 ]; then
+       echo "  ERROR: MariaDB timeout after 30s"
+       exit 1
+     fi
+     echo "  waiting... ($i/30)"
+     fixsleep 1
+   done
 
     # Preparazione comando installazione
     INSTALL_CMD=(
