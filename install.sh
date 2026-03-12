@@ -151,7 +151,7 @@ if [[ "$MAHO_APP_ENABLE" = "1" ]]; then
     # gives 'stores' scope priority over 'default', so the admin will use ADMIN_URL
     # for redirects while the frontend continues to use BASE_URL.
     echo "Configuring separate admin URL..."
-    docker exec maho_db mariadb -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "
+    docker exec ${APPNAME}_db mariadb -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "
     DELETE FROM core_config_data WHERE path IN ('admin/url/use_custom', 'web/unsecure/base_url', 'web/secure/base_url');
     INSERT INTO core_config_data (scope, scope_id, path, value) VALUES
     ('default', 0, 'admin/url/use_custom',  '1'),
