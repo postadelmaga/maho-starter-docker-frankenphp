@@ -116,16 +116,16 @@ if [[ "$MAHO_APP_ENABLE" == "1" ]]; then
     echo "Installing Maho LTS..."
     $dc run --rm app "${INSTALL_CMD[@]}"
 
-    echo "Configuring separate admin URL..."
-    $dc run --rm app mariadb -h "$DB_HOST" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "
-    DELETE FROM core_config_data WHERE path IN ('admin/url/use_custom', 'web/unsecure/base_url', 'web/secure/base_url');
-    INSERT INTO core_config_data (scope, scope_id, path, value) VALUES
-    ('default', 0, 'admin/url/use_custom',  '1'),
-    ('default', 0, 'web/unsecure/base_url', '$BASE_URL'),
-    ('default', 0, 'web/secure/base_url',   '$BASE_URL'),
-    ('stores',  0, 'web/unsecure/base_url', '$ADMIN_URL'),
-    ('stores',  0, 'web/secure/base_url',   '$ADMIN_URL');"
-
+   echo "Configuring separate admin URL..."
+   $dc run --rm app mariadb -h"$DB_HOST" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --skip-ssl "$MYSQL_DATABASE" -e "
+   INSERT INTO core_config_data (scope, scope_id, path, value) VALUES
+     ('default', 0, 'admin/url/use_custom',  '1'),
+     ('default', 0, 'web/unsecure/base_url', '$BASE_URL'),
+     ('default', 0, 'web/secure/base_url',   '$BASE_URL'),
+     ('stores',  0, 'web/unsecure/base_url', '$ADMIN_URL'),
+     ('stores',  0, 'web/secure/base_url',   '$ADMIN_URL')
+   ON DUPLICATE KEY UPDATE value = VALUES(value);
+   "
     echo "Finalizing: Indexing & Cache..."
     $dc run --rm app ./maho index:reindex:all
     $dc run --rm app ./maho cache:flush
