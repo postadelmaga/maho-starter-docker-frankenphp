@@ -43,6 +43,13 @@ ADMIN_PASSWORD="${ADMIN_PASSWORD:-veryl0ngpassw0rd}"
 ADMIN_FIRSTNAME="${ADMIN_FIRSTNAME:-Maho}"
 ADMIN_LASTNAME="${ADMIN_LASTNAME:-User}"
 
+PROFILES=""
+[[ "${MAHO_APP_ENABLE:-1}"       == "1" ]] && PROFILES="${PROFILES:+$PROFILES,}maho"
+[[ "${DATABASE_ENABLE:-1}"       == "1" ]] && PROFILES="${PROFILES:+$PROFILES,}database"
+[[ "${REDIS_ENABLE:-1}"          == "1" ]] && PROFILES="${PROFILES:+$PROFILES,}redis"
+[[ "${PHPMYADMIN_ENABLE:-0}"     == "1" ]] && PROFILES="${PROFILES:+$PROFILES,}phpmyadmin"
+export COMPOSE_PROFILES="$PROFILES"
+
 # Reset flag
 if [[ "$1" = "--reset" ]]; then
   echo "⚠️  WARNING: This will destroy all containers, volumes, and the src/ directory."
@@ -80,13 +87,6 @@ fi
 
 # Create src directory if it doesn't exist
 mkdir -p src
-
-PROFILES=""
-[[ "${MAHO_APP_ENABLE:-1}"       == "1" ]] && PROFILES="${PROFILES:+$PROFILES,}maho"
-[[ "${DATABASE_ENABLE:-1}"       == "1" ]] && PROFILES="${PROFILES:+$PROFILES,}database"
-[[ "${REDIS_ENABLE:-1}"          == "1" ]] && PROFILES="${PROFILES:+$PROFILES,}redis"
-[[ "${PHPMYADMIN_ENABLE:-0}"     == "1" ]] && PROFILES="${PROFILES:+$PROFILES,}phpmyadmin"
-export COMPOSE_PROFILES="$PROFILES"
 
 echo "Building containers..."
 $dc build
