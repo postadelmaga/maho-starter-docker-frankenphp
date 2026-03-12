@@ -5,29 +5,32 @@ services:
       args:
         USER_ID: ${USER_ID:-1000}
     container_name: maho_app
+    profiles:
+      - full
+      - maho
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
       - "443:443/udp"
     env_file:
-      - .env # import eviroment variable
+      - .env
     volumes:
-      - ./src:/app # Maho project root (public/ subdir is the document root)
+      - ./src:/app
       - ./Caddyfile:/etc/frankenphp/Caddyfile
       - ./php.ini:/usr/local/etc/php/conf.d/custom.ini
       - caddy_data:/data
       - caddy_config:/config
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     networks:
       - maho-network
-    depends_on:
-      - db
+    # Rimosso depends_on rigido per permettere l'avvio flessibile con i profili
 
   db:
     image: mariadb:lts
     container_name: maho_db
+    profiles:
+      - full
+      - database
     restart: unless-stopped
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
@@ -38,7 +41,22 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
-      - ./mariadb.cnf:/etc/mysql/conf.d/maho.cnf  # aggiungi questa
+      - ./mariadb.cnf:/etc/mysql/conf.d/maho.cnf
+    networks:
+      - maho-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: maho_redis
+    profiles:
+      - full
+      - redis
+    restart: unless-stopped
+    command: [ "redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru", "--save", "900 1", "--appendonly", "yes" ]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
     networks:
       - maho-network
 
@@ -55,8 +73,6 @@ services:
       - "8080:80"
     networks:
       - maho-network
-    depends_on:
-      - db
 
 networks:
   maho-network:
@@ -64,5 +80,6 @@ networks:
 
 volumes:
   db_data:
+  redis_data:
   caddy_data:
   caddy_config:

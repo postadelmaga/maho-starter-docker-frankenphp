@@ -84,11 +84,13 @@ mkdir -p src
 echo "Building containers..."
 $dc build
 
-if [[ "${PHPMYADMIN_ENABLE:-0}" == "1" ]]; then
-  export COMPOSE_PROFILES="phpmyadmin"
-else
-  export COMPOSE_PROFILES=""
-fi
+PROFILES=""
+[[ "${MAHO_APP_ENABLE:-1}"       == "1" ]] && PROFILES="${PROFILES:+$PROFILES,}maho"
+[[ "${DATABASE_ENABLE:-1}"       == "1" ]] && PROFILES="${PROFILES:+$PROFILES,}database"
+[[ "${REDIS_ENABLE:-1}"          == "1" ]] && PROFILES="${PROFILES:+$PROFILES,}redis"
+[[ "${PHPMYADMIN_ENABLE:-0}"     == "1" ]] && PROFILES="${PROFILES:+$PROFILES,}phpmyadmin"
+
+export COMPOSE_PROFILES="$PROFILES"
 
 echo "Starting containers..."
 $dc up -d
