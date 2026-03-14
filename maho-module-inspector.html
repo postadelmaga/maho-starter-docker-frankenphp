@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maho Module Inspector</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;min-height:100vh;display:flex;flex-direction:column;padding:16px;gap:12px}
+h1{font-size:16px;font-weight:500;color:#1a1a18;letter-spacing:-.01em}
+.sub{font-size:11px;color:#888780;font-family:monospace}
+#mi{display:flex;height:calc(100vh - 80px);min-height:500px;border:0.5px solid #c8c6bc;border-radius:12px;overflow:hidden;background:#fff}
+#si{width:268px;flex-shrink:0;background:#f5f4f0;border-right:0.5px solid #ddd;display:flex;flex-direction:column;overflow:hidden}
+.si-head{padding:12px;border-bottom:0.5px solid #ddd}
+.si-title{font-size:13px;font-weight:500;color:#1a1a18;margin-bottom:2px}
+.si-sub{font-size:10px;color:#888;font-family:monospace}
+.si-body{padding:8px;display:flex;flex-direction:column;gap:6px;border-bottom:0.5px solid #ddd}
+#pick-btn{width:100%;padding:7px 10px;background:#fff;border:0.5px solid #c8c6bc;border-radius:8px;font-size:12px;cursor:pointer;text-align:left;color:#1a1a18;transition:background .15s;font-family:inherit}
+#pick-btn:hover{background:#eee;border-color:#888}
+#drop-zone{border:0.5px dashed #c8c6bc;border-radius:8px;padding:8px 10px;text-align:center;font-size:11px;color:#888;cursor:default;transition:all .15s}
+#drop-zone.over{border-color:#444;background:#fff;color:#333}
+#search-in{width:100%;padding:6px 10px;background:#fff;border:0.5px solid #c8c6bc;border-radius:8px;font-size:11px;color:#1a1a18;outline:none;font-family:monospace}
+#search-in:focus{border-color:#444}
+#search-in::placeholder{color:#aaa}
+#search-in:disabled{opacity:.5;cursor:not-allowed}
+.fltrs{display:flex;gap:4px}
+.fltr{flex:1;padding:5px 4px;background:#fff;border:0.5px solid #c8c6bc;border-radius:8px;font-size:10px;cursor:pointer;color:#888;transition:all .15s;text-align:center;font-family:monospace}
+.fltr.on{border-color:#333;color:#1a1a18;font-weight:500}
+#stats-bar{padding:5px 12px;font-size:10px;color:#888;font-family:monospace}
+#mod-list{flex:1;overflow-y:auto;padding:5px}
+#mod-list::-webkit-scrollbar{width:3px}
+#mod-list::-webkit-scrollbar-thumb{background:#ccc;border-radius:2px}
+.mcard{padding:8px 10px;border:0.5px solid #e8e6e0;border-radius:8px;margin-bottom:3px;cursor:pointer;transition:all .15s;background:#fff}
+.mcard:hover{border-color:#aaa}
+.mcard.sel{border-color:#333;background:#fff}
+.mn{font-family:monospace;font-size:11px;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1a1a18}
+.mn .ns{color:#888}
+.mb{display:flex;gap:3px;flex-wrap:wrap}
+.bdg{padding:1px 5px;border-radius:4px;font-size:10px;font-weight:500;display:inline-block}
+.bi{background:#ddeeff;color:#0055aa}
+.bs{background:#ddffee;color:#006633}
+.bw{background:#fff3cc;color:#886600}
+.bd{background:#ffeeee;color:#aa2222}
+.b0{background:#f0ede6;color:#666;border:0.5px solid #ddd}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#fff}
+#welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:40px;text-align:center}
+.w-ico{font-size:32px;opacity:.15}
+.w-t{font-size:14px;color:#666;font-weight:500}
+.w-s{font-size:11px;color:#aaa;max-width:280px;line-height:1.7;font-family:monospace}
+#load-panel{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.load-t{font-size:11px;color:#666;font-family:monospace}
+.pbar{width:200px;height:2px;background:#e0ddd6;border-radius:1px;overflow:hidden}
+.pfill{height:100%;background:#333;width:0;transition:width .3s}
+#detail{display:none;flex-direction:column;height:100%;overflow:hidden}
+.dh{padding:14px 18px 10px;border-bottom:0.5px solid #e8e6e0}
+.dt{font-size:15px;font-weight:500;margin-bottom:6px;color:#1a1a18;font-family:monospace}
+.dt .ns{color:#888;font-weight:400}
+.dm{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.tabs{display:flex;border-bottom:0.5px solid #e8e6e0;padding:0 18px;overflow-x:auto}
+.tab{padding:8px 10px;font-size:10px;color:#888;cursor:pointer;border-bottom:1.5px solid transparent;transition:all .15s;font-family:monospace;white-space:nowrap;flex-shrink:0}
+.tab:hover{color:#333}
+.tab.on{color:#1a1a18;border-bottom-color:#1a1a18}
+.tc{flex:1;overflow-y:auto;padding:14px 18px}
+.tc::-webkit-scrollbar{width:3px}
+.tc::-webkit-scrollbar-thumb{background:#ccc;border-radius:2px}
+.sec{margin-bottom:18px}
+.stit{font-size:9px;font-family:monospace;color:#aaa;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;padding-bottom:5px;border-bottom:0.5px solid #e8e6e0}
+.igrid{border:0.5px solid #e8e6e0;border-radius:8px;overflow:hidden;margin-bottom:10px}
+.irow{display:grid;grid-template-columns:130px 1fr;border-bottom:0.5px solid #e8e6e0}
+.irow:last-child{border-bottom:none}
+.ik{background:#f5f4f0;padding:6px 10px;font-size:10px;color:#888;font-family:monospace}
+.iv{padding:6px 10px;font-size:11px;color:#1a1a18;font-family:monospace;word-break:break-all}
+table.rt{width:100%;border-collapse:collapse;font-family:monospace;font-size:10px}
+table.rt th{text-align:left;padding:5px 9px;background:#f5f4f0;font-size:9px;color:#888;border:0.5px solid #e8e6e0;font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+table.rt td{padding:6px 9px;border:0.5px solid #e8e6e0;color:#1a1a18;vertical-align:top}
+table.rt tr:hover td{background:#f9f8f4}
+.fc{color:#888}
+.empty{padding:14px;text-align:center;font-size:11px;color:#aaa;border:0.5px dashed #e0ddd6;border-radius:8px;font-family:monospace}
+.obs-item{padding:8px 10px;border:0.5px solid #e8e6e0;border-radius:8px;margin-bottom:4px;font-family:monospace;font-size:11px}
+.obs-ev{font-weight:500;color:#1a1a18;margin-bottom:3px}
+.obs-d{font-size:10px;color:#888;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.lay-ref{padding:6px 10px;border:0.5px solid #e8e6e0;border-radius:8px;margin-bottom:3px;font-family:monospace;font-size:11px;display:flex;align-items:center;gap:8px}
+.ebtn{padding:7px 14px;background:#fff;border:0.5px solid #c8c6bc;border-radius:8px;font-size:11px;cursor:pointer;transition:all .15s;font-family:monospace;color:#1a1a18;margin-right:6px;margin-bottom:6px}
+.ebtn:hover{border-color:#333;background:#f5f4f0}
+.ebtn:disabled{opacity:.4;cursor:not-allowed}
+.exp-log{margin-top:10px;font-family:monospace;font-size:10px;color:#666;padding:8px;background:#f5f4f0;border-radius:6px;display:none}
+.ftree{font-family:monospace;font-size:11px}
+.frow{display:flex;align-items:center;gap:5px;padding:2px 4px;border-radius:4px;cursor:pointer;transition:background .1s;user-select:none}
+.frow:hover{background:#f5f4f0}
+.ficon{width:12px;text-align:center;font-size:9px;flex-shrink:0;color:#aaa}
+.fname{color:#1a1a18}
+.fname.d{color:#0055aa}
+.fname.php{color:#006633}
+.fname.xml{color:#886600}
+.fname.css{color:#aa2222}
+.fname.phtml{color:#666}
+.fname.js{color:#5500aa}
+.fname.o{color:#aaa}
+.fsize{color:#bbb;font-size:9px;margin-left:auto;flex-shrink:0}
+.fch{display:none}
+.fch.open{display:block}
+.note{font-size:11px;color:#888;background:#f5f4f0;padding:10px 12px;border-radius:8px;line-height:1.6;margin-bottom:12px;font-family:monospace}
+</style>
+</head>
+<body>
+<div style="display:flex;align-items:baseline;gap:10px">
+  <h1>Maho Module Inspector</h1>
+  <span class="sub">app/code — Local &amp; Community</span>
+</div>
+
+<div id="mi">
+  <div id="si">
+    <div class="si-head">
+      <div class="si-title">Modules</div>
+      <div class="si-sub">Select a directory to start</div>
+    </div>
+    <div class="si-body">
+      <button id="pick-btn">📁 Select app/code folder...</button>
+      <div id="drop-zone">or drag &amp; drop app/code here</div>
+      <input id="search-in" type="text" placeholder="Search modules..." disabled>
+      <div class="fltrs">
+        <div class="fltr on" data-f="all">All</div>
+        <div class="fltr" data-f="local">Local</div>
+        <div class="fltr" data-f="community">Community</div>
+      </div>
+    </div>
+    <div id="stats-bar"></div>
+    <div id="mod-list"></div>
+  </div>
+
+  <div id="main">
+    <div id="welcome">
+      <div class="w-ico">◆</div>
+      <div class="w-t">Select your app/code directory</div>
+      <div class="w-s">Click the button on the left or drag &amp; drop the app/code folder.<br><br>Supports local/community pools. Reads config.xml to extract rewrites, observers, and layout references.</div>
+    </div>
+    <div id="load-panel">
+      <div class="load-t" id="load-t">Scanning...</div>
+      <div class="pbar"><div class="pfill" id="pfill"></div></div>
+    </div>
+    <div id="detail">
+      <div class="dh">
+        <div class="dt" id="dt"></div>
+        <div class="dm" id="dm"></div>
+      </div>
+      <div class="tabs" id="tabs">
+        <div class="tab on" data-t="overview">Overview</div>
+        <div class="tab" data-t="files">Files</div>
+        <div class="tab" data-t="rewrites">Rewrites</div>
+        <div class="tab" data-t="observers">Observers</div>
+        <div class="tab" data-t="layout">Layout</div>
+        <div class="tab" data-t="export">Export</div>
+      </div>
+      <div class="tc" id="tc"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let modules=[],sel=null,pool='all',tab='overview';
+const $=id=>document.getElementById(id);
+const pickBtn=$('pick-btn'),searchIn=$('search-in'),modListEl=$('mod-list');
+const welcome=$('welcome'),loadPanel=$('load-panel'),detail=$('detail');
+const dt=$('dt'),dm=$('dm'),tc=$('tc'),statsBar=$('stats-bar');
+const loadT=$('load-t'),pfill=$('pfill'),dropZone=$('drop-zone');
+
+function showLoad(t,p){welcome.style.display='none';loadPanel.style.display='flex';detail.style.display='none';loadT.textContent=t;pfill.style.width=p+'%';}
+function showWelcome(){welcome.style.display='flex';loadPanel.style.display='none';detail.style.display='none';}
+function showDetail(){welcome.style.display='none';loadPanel.style.display='none';detail.style.display='flex';}
+
+pickBtn.addEventListener('click',async()=>{
+  if(!window.showDirectoryPicker){alert('showDirectoryPicker non supportato. Usa Chrome 86+ e apri il file localmente (non da file:// se bloccato, prova da un server locale).');return;}
+  try{const root=await window.showDirectoryPicker();await runScan(root,'handle');}
+  catch(e){if(e.name!=='AbortError')alert('Errore file picker: '+e.message);}
+});
+
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('over');});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('over'));
+dropZone.addEventListener('drop',async e=>{
+  e.preventDefault();dropZone.classList.remove('over');
+  const items=[...e.dataTransfer.items];
+  const entries=items.map(i=>i.webkitGetAsEntry&&i.webkitGetAsEntry()).filter(Boolean);
+  if(!entries.length){alert('Nessuna entry trovata. Prova il file picker.');return;}
+  const root=entries.find(e=>e.isDirectory)||entries[0];
+  if(!root||!root.isDirectory){alert('Trascina una cartella.');return;}
+  await runScan(root,'entry');
+});
+
+async function runScan(root,mode){
+  showLoad('Rilevamento struttura...',5);
+  modules=[];sel=null;modListEl.innerHTML='';statsBar.textContent='';
+  let codeRoot=null;
+  try{codeRoot=await detectCodeRoot(root,mode);}catch(e){}
+  if(!codeRoot){alert('Impossibile trovare app/code. Seleziona il root del progetto, app/, o app/code/.');showWelcome();return;}
+  const allMods=[];
+  showLoad('Scansione pools...',15);
+  for(const p of['local','community']){
+    try{
+      const poolH=mode==='handle'?await codeRoot.getDirectoryHandle(p):await getDirEntry(codeRoot,p);
+      if(!poolH)continue;
+      const nsList=mode==='handle'?await listHandle(poolH):await listEntry(poolH);
+      for(const ns of nsList){
+        const mList=mode==='handle'?await listHandle(ns.h):await listEntry(ns.h);
+        for(const mod of mList)allMods.push({ns:ns.name,mod:mod.name,h:mod.h,pool:p,mode});
+      }
+    }catch(e){}
+  }
+  if(!allMods.length){alert('Nessun modulo trovato. Controlla di aver selezionato app/code o una cartella genitore.');showWelcome();return;}
+  for(let i=0;i<allMods.length;i++){
+    const {ns,mod,h,pool:p,mode:m}=allMods[i];
+    showLoad(`Parsing ${ns}_${mod}...`,15+Math.round((i/allMods.length)*80));
+    try{modules.push(await parseModule(ns,mod,h,p,m));}catch(e){console.warn('Skip',ns,mod,e);}
+  }
+  showLoad('Completato!',100);
+  setTimeout(()=>{searchIn.disabled=false;renderList();showWelcome();},400);
+}
+
+async function detectCodeRoot(root,mode){
+  if(mode==='handle'){
+    try{return await(await root.getDirectoryHandle('app')).getDirectoryHandle('code');}catch{}
+    try{return await root.getDirectoryHandle('code');}catch{}
+    for(const p of['local','community']){try{await root.getDirectoryHandle(p);return root;}catch{}}
+    return null;
+  }else{
+    try{return await getDirEntry(await getDirEntry(root,'app'),'code');}catch{}
+    try{return await getDirEntry(root,'code');}catch{}
+    for(const p of['local','community']){try{if(await getDirEntry(root,p))return root;}catch{}}
+    return null;
+  }
+}
+
+async function listHandle(h){const r=[];for await(const [name,ch] of h){if(ch.kind==='directory')r.push({name,h:ch});}return r;}
+async function listEntry(entry){
+  return new Promise((resolve,reject)=>{
+    const reader=entry.createReader();
+    reader.readEntries(entries=>{resolve(entries.filter(e=>e.isDirectory).map(e=>({name:e.name,h:e})));},reject);
+  });
+}
+async function getDirEntry(parent,name){
+  return new Promise((res,rej)=>parent.getDirectory(name,{},res,rej));
+}
+async function getAllEntries(reader){
+  const all=[];
+  const read=()=>new Promise(r=>reader.readEntries(r));
+  let batch;
+  while((batch=await read()).length)all.push(...batch);
+  return all;
+}
+
+async function parseModule(ns,name,h,p,mode){
+  const m={ns,name,fullName:`${ns}_${name}`,pool:p,mode,h,version:'',active:true,
+    rewrites:{models:[],blocks:[],helpers:[]},observers:[],layoutRefs:[],
+    hasLayout:false,cssFiles:[],jsFiles:[],fileTree:null};
+  try{
+    const etcH=mode==='handle'?await h.getDirectoryHandle('etc'):await getDirEntry(h,'etc');
+    try{
+      let xml='';
+      if(mode==='handle'){const f=await(await etcH.getFileHandle('config.xml')).getFile();xml=await f.text();}
+      else{xml=await new Promise((res,rej)=>{etcH.getFile('config.xml',{},file=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.readAsText(file);},rej);});}
+      parseConfigXml(xml,m);
+    }catch(e){}
+  }catch(e){}
+  m.fileTree=await buildTree(h,mode,0);
+  collectAssets(m.fileTree,m);
+  return m;
+}
+
+function parseConfigXml(xml,m){
+  const doc=new DOMParser().parseFromString(xml,'text/xml');
+  const modulesNode=doc.querySelector('modules');
+  if(modulesNode){
+    for(const c of modulesNode.children){
+      if(c.tagName===m.fullName){
+        m.version=c.querySelector('version')?.textContent?.trim()||'';
+        if(c.querySelector('active')?.textContent?.trim()==='false')m.active=false;
+      }
+    }
+  }
+  const global=doc.querySelector('global');
+  if(global){
+    for(const key of['models','blocks','helpers']){
+      const tn=global.querySelector(key);if(!tn)continue;
+      for(const g of tn.children){
+        const rw=g.querySelector('rewrite');if(!rw)continue;
+        for(const r of rw.children)m.rewrites[key].push({from:`${g.tagName}/${r.tagName}`,to:r.textContent.trim()});
+      }
+    }
+  }
+  for(const area of['frontend','adminhtml']){
+    const an=doc.querySelector(area);if(!an)continue;
+    const updates=an.querySelector('layout > updates');
+    if(updates){for(const c of updates.children){const f=c.querySelector('file');if(f){m.layoutRefs.push({area,file:f.textContent.trim()});m.hasLayout=true;}}}
+  }
+  for(const area of['frontend','adminhtml','global']){
+    const an=doc.querySelector(area);if(!an)continue;
+    const events=an.querySelector('events');if(!events)continue;
+    for(const ev of events.children){
+      const obs=ev.querySelector('observers');if(!obs)continue;
+      for(const o of obs.children)m.observers.push({
+        area,event:ev.tagName,
+        klass:o.querySelector('class')?.textContent?.trim()||'',
+        method:o.querySelector('method')?.textContent?.trim()||'',
+        type:o.querySelector('type')?.textContent?.trim()||'singleton'
+      });
+    }
+  }
+}
+
+async function buildTree(h,mode,depth){
+  const node={name:h.name,kind:'dir',children:[],depth,h};
+  let entries=[];
+  try{
+    if(mode==='handle'){for await(const [n,ch] of h)entries.push({name:n,kind:ch.kind,h:ch});}
+    else{const all=await getAllEntries(h.createReader());entries=all.map(e=>({name:e.name,kind:e.isDirectory?'dir':'file',h:e}));}
+  }catch(e){}
+  for(const e of entries){
+    if(e.kind==='dir')node.children.push(await buildTree(e.h,mode,depth+1));
+    else{
+      let size=0;
+      try{const f=mode==='handle'?await e.h.getFile():await new Promise(r=>e.h.file(r));size=f.size;}catch{}
+      node.children.push({name:e.name,kind:'file',size,h:e.h,mode,depth:depth+1});
+    }
+  }
+  node.children.sort((a,b)=>{if(a.kind!==b.kind)return a.kind==='dir'?-1:1;return a.name.localeCompare(b.name);});
+  return node;
+}
+
+function collectAssets(tree,m){
+  if(!tree)return;
+  if(tree.kind==='file'){
+    if(tree.name.endsWith('.css'))m.cssFiles.push(tree.name);
+    if(tree.name.endsWith('.js')&&!tree.name.endsWith('.min.js'))m.jsFiles.push(tree.name);
+    return;
+  }
+  for(const c of tree.children||[])collectAssets(c,m);
+}
+
+function countFiles(tree){if(!tree)return 0;if(tree.kind==='file')return 1;return(tree.children||[]).reduce((s,c)=>s+countFiles(c),0);}
+function fmtSize(b){if(b<1024)return b+'B';if(b<1024*1024)return(b/1024).toFixed(1)+'K';return(b/1024/1024).toFixed(2)+'MB';}
+
+searchIn.addEventListener('input',renderList);
+document.querySelectorAll('.fltr').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.fltr').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');pool=b.dataset.f;renderList();
+  });
+});
+
+function renderList(){
+  const q=searchIn.value.toLowerCase();
+  const filtered=modules.filter(m=>{
+    if(pool!=='all'&&m.pool!==pool)return false;
+    if(q&&!m.fullName.toLowerCase().includes(q))return false;
+    return true;
+  });
+  statsBar.textContent=filtered.length+' / '+modules.length+' moduli';
+  modListEl.innerHTML='';
+  for(const m of filtered){
+    const rc=m.rewrites.models.length+m.rewrites.blocks.length+m.rewrites.helpers.length;
+    const card=document.createElement('div');
+    card.className='mcard'+(sel?.fullName===m.fullName?' sel':'');
+    card.innerHTML=`<div class="mn"><span class="ns">${m.ns}_</span>${m.name}</div><div class="mb">
+      <span class="bdg ${m.pool==='local'?'bi':'bs'}">${m.pool}</span>
+      ${m.version?`<span class="bdg b0">v${m.version}</span>`:''}
+      ${rc>0?`<span class="bdg bw">${rc} rw</span>`:''}
+      ${m.hasLayout?`<span class="bdg bs">layout</span>`:''}
+      ${m.observers.length>0?`<span class="bdg b0">${m.observers.length} obs</span>`:''}
+      ${!m.active?`<span class="bdg bd">inactive</span>`:''}
+    </div>`;
+    card.addEventListener('click',()=>selectMod(m));
+    modListEl.appendChild(card);
+  }
+}
+
+function selectMod(m){
+  sel=m;renderList();
+  const rc=m.rewrites.models.length+m.rewrites.blocks.length+m.rewrites.helpers.length;
+  dt.innerHTML=`<span class="ns">${m.ns}_</span>${m.name}`;
+  dm.innerHTML=`<span class="bdg ${m.pool==='local'?'bi':'bs'}">${m.pool}</span>
+    ${m.version?`<span class="bdg b0">v${m.version}</span>`:''}
+    ${rc>0?`<span class="bdg bw">${rc} rewrites</span>`:''}
+    ${m.hasLayout?`<span class="bdg bs">layout</span>`:''}
+    ${m.observers.length?`<span class="bdg b0">${m.observers.length} observers</span>`:''}
+    ${!m.active?`<span class="bdg bd">inactive</span>`:''}`;
+  // reset tab
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelector('.tab[data-t="overview"]').classList.add('on');
+  tab='overview';
+  showDetail();renderTab();
+}
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+    t.classList.add('on');tab=t.dataset.t;renderTab();
+  });
+});
+
+function renderTab(){
+  if(!sel)return;tc.innerHTML='';
+  ({overview:renderOverview,files:renderFiles,rewrites:renderRewrites,
+    observers:renderObservers,layout:renderLayout,export:renderExport}[tab]||renderOverview)();
+}
+
+function renderOverview(){
+  const m=sel;
+  const rc=m.rewrites.models.length+m.rewrites.blocks.length+m.rewrites.helpers.length;
+  const fc=countFiles(m.fileTree);
+  tc.innerHTML=`
+  <div class="sec"><div class="stit">Informazioni modulo</div>
+  <div class="igrid">
+    <div class="irow"><div class="ik">Nome completo</div><div class="iv">${m.fullName}</div></div>
+    <div class="irow"><div class="ik">Pool</div><div class="iv">${m.pool}</div></div>
+    <div class="irow"><div class="ik">Versione</div><div class="iv">${m.version||'—'}</div></div>
+    <div class="irow"><div class="ik">Attivo</div><div class="iv">${m.active?'✓ Sì':'✗ No'}</div></div>
+    <div class="irow"><div class="ik">File totali</div><div class="iv">${fc}</div></div>
+    <div class="irow"><div class="ik">Rewrites</div><div class="iv">${rc} (Model: ${m.rewrites.models.length}, Block: ${m.rewrites.blocks.length}, Helper: ${m.rewrites.helpers.length})</div></div>
+    <div class="irow"><div class="ik">Observers</div><div class="iv">${m.observers.length}</div></div>
+    <div class="irow"><div class="ik">Layout refs</div><div class="iv">${m.layoutRefs.length}</div></div>
+    ${m.cssFiles.length?`<div class="irow"><div class="ik">CSS</div><div class="iv">${m.cssFiles.join(', ')}</div></div>`:''}
+    ${m.jsFiles.length?`<div class="irow"><div class="ik">JS</div><div class="iv">${m.jsFiles.join(', ')}</div></div>`:''}
+  </div></div>
+  ${rc>0?`<div class="sec"><div class="stit">Rewrites (${rc})</div>${buildRewriteTable(m)}</div>`:''}
+  ${m.observers.length?`<div class="sec"><div class="stit">Observer (${m.observers.length})</div>${buildObsList(m,3)}</div>`:''}`;
+}
+
+function renderFiles(){
+  tc.innerHTML='<div class="sec"><div class="stit">Struttura file</div><div class="ftree" id="ftree"></div></div>';
+  const container=document.getElementById('ftree');
+  if(sel.fileTree)for(const c of sel.fileTree.children)renderNode(c,container);
+}
+
+function renderNode(node,container){
+  const wrap=document.createElement('div');
+  const indent=Math.max(0,(node.depth-1)*14)+'px';
+  if(node.kind==='dir'){
+    wrap.innerHTML=`<div class="frow" style="padding-left:${indent}"><span class="ficon">▶</span><span class="fname d">${node.name}/</span><span class="fsize">${(node.children||[]).length} items</span></div><div class="fch"></div>`;
+    const row=wrap.querySelector('.frow'),ch=wrap.querySelector('.fch');
+    const kids=node.children||[];
+    if(kids.length){
+      row.addEventListener('click',()=>{
+        const open=ch.classList.toggle('open');
+        row.querySelector('.ficon').textContent=open?'▼':'▶';
+        if(open&&!ch.dataset.loaded){ch.dataset.loaded='1';for(const c of kids)renderNode(c,ch);}
+      });
+    }else{row.querySelector('.ficon').textContent='';}
+  }else{
+    const ext=node.name.split('.').pop().toLowerCase();
+    const cls=['php','xml','css','phtml','js'].includes(ext)?ext:'o';
+    wrap.innerHTML=`<div class="frow" style="padding-left:calc(${indent} + 12px)"><span class="ficon"></span><span class="fname ${cls}">${node.name}</span><span class="fsize">${fmtSize(node.size)}</span></div>`;
+  }
+  container.appendChild(wrap);
+}
+
+function buildRewriteTable(m){
+  const rows=[];
+  for(const[key,label] of[['models','Model'],['blocks','Block'],['helpers','Helper']]){
+    for(const r of m.rewrites[key])rows.push(`<tr><td><span class="bdg b0">${label}</span></td><td class="fc">${r.from}</td><td>${r.to}</td></tr>`);
+  }
+  return rows.length
+    ?`<table class="rt"><thead><tr><th>Tipo</th><th>Originale</th><th>Classe override</th></tr></thead><tbody>${rows.join('')}</tbody></table>`
+    :`<div class="empty">Nessun rewrite</div>`;
+}
+
+function renderRewrites(){
+  tc.innerHTML=`<div class="sec"><div class="stit">Rewrites</div>${buildRewriteTable(sel)}</div>`;
+}
+
+function buildObsList(m,max=0){
+  const list=max?m.observers.slice(0,max):m.observers;
+  const html=list.map(o=>`<div class="obs-item">
+    <div class="obs-ev">${o.event}</div>
+    <div class="obs-d">
+      <span class="bdg b0">${o.area}</span>
+      <span>${o.klass}::${o.method}</span>
+      <span style="color:#bbb">${o.type}</span>
+    </div>
+  </div>`).join('');
+  return html+(max&&m.observers.length>max
+    ?`<div style="font-size:10px;color:#aaa;padding:5px 6px">+${m.observers.length-max} altri — vai alla tab Observers</div>`
+    :'');
+}
+
+function renderObservers(){
+  tc.innerHTML=`<div class="sec"><div class="stit">Event observers (${sel.observers.length})</div>${sel.observers.length?buildObsList(sel):'<div class="empty">Nessun observer dichiarato</div>'}</div>`;
+}
+
+function renderLayout(){
+  const refs=sel.layoutRefs.map(r=>`<div class="lay-ref"><span class="bdg b0">${r.area}</span><span>${r.file}</span></div>`).join('');
+  const assets=[
+    ...sel.cssFiles.map(f=>`<div class="lay-ref"><span class="bdg" style="background:#ffeeee;color:#aa2222">css</span>${f}</div>`),
+    ...sel.jsFiles.map(f=>`<div class="lay-ref"><span class="bdg" style="background:#f0eeff;color:#5500aa">js</span>${f}</div>`)
+  ].join('');
+  tc.innerHTML=`
+    <div class="sec"><div class="stit">Layout references da config.xml (${sel.layoutRefs.length})</div>
+      ${refs||'<div class="empty">Nessun layout ref in config.xml</div>'}
+    </div>
+    ${assets?`<div class="sec"><div class="stit">Asset CSS/JS nel modulo</div>${assets}</div>`:''}`;
+}
+
+function renderExport(){
+  tc.innerHTML=`<div class="sec"><div class="stit">Export</div>
+    <div class="note">Modulo: <strong>${sel.fullName}</strong> — ${countFiles(sel.fileTree)} file<br>
+    Il ZIP ricrea la struttura completa sotto <code>app/code/${sel.pool}/${sel.ns}/${sel.name}/</code></div>
+    <button class="ebtn" id="exp-zip">⬇ Download ZIP</button>
+    <button class="ebtn" id="exp-folder" ${window.showDirectoryPicker?'':'disabled title="Richiede File System Access API (usa ZIP)"'}>📁 Esporta in cartella...</button>
+    <div class="exp-log" id="exp-log"></div>
+  </div>`;
+  $('exp-zip').addEventListener('click',exportZip);
+  if(window.showDirectoryPicker)$('exp-folder').addEventListener('click',exportToFolder);
+}
+
+async function exportZip(){
+  const m=sel,log=$('exp-log');
+  log.style.display='block';log.textContent='Costruzione ZIP...';
+  const zip=new JSZip();
+  const base=`app/code/${m.pool}/${m.ns}/${m.name}`;
+  await addToZip(zip,m.fileTree,base);
+  const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`${m.fullName}.zip`});
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  log.textContent='ZIP scaricato: '+m.fullName+'.zip ('+fmtSize(blob.size)+')';
+}
+
+async function addToZip(zip,node,path){
+  for(const c of node.children||[]){
+    const cp=path+'/'+c.name;
+    if(c.kind==='dir'){await addToZip(zip,c,cp);}
+    else{
+      try{
+        const f=c.mode==='handle'?await c.h.getFile():await new Promise(r=>c.h.file(r));
+        zip.file(cp,await f.arrayBuffer());
+      }catch(e){}
+    }
+  }
+}
+
+async function exportToFolder(){
+  const m=sel,log=$('exp-log');
+  log.style.display='block';log.textContent='Seleziona destinazione...';
+  try{
+    const dest=await window.showDirectoryPicker({mode:'readwrite'});
+    log.textContent='Copia in corso...';
+    let cur=dest;
+    for(const part of['app','code',m.pool,m.ns,m.name])cur=await cur.getDirectoryHandle(part,{create:true});
+    let count=0;
+    await copyChildren(m.fileTree,cur,()=>{count++;log.textContent=`Copiati ${count} file...`;});
+    log.textContent=`Esportati ${count} file in: app/code/${m.pool}/${m.ns}/${m.name}`;
+  }catch(e){if(e.name!=='AbortError')log.textContent='Errore: '+e.message;}
+}
+
+async function copyChildren(node,destH,onFile){
+  for(const c of node.children||[]){
+    if(c.kind==='dir'){
+      const d=await destH.getDirectoryHandle(c.name,{create:true});
+      await copyChildren(c,d,onFile);
+    }else{
+      try{
+        const f=c.mode==='handle'?await c.h.getFile():await new Promise(r=>c.h.file(r));
+        const w=await(await destH.getFileHandle(c.name,{create:true})).createWritable();
+        await w.write(await f.arrayBuffer());await w.close();
+        if(onFile)onFile();
+      }catch(e){}
+    }
+  }
+}
+</script>
+</body>
+</html>

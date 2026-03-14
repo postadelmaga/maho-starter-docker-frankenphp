@@ -23,7 +23,9 @@ services:
       - caddy_config:/config
     networks:
       - maho-network
-    # Rimosso depends_on rigido per permettere l'avvio flessibile con i profili
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      # Rimosso depends_on rigido per permettere l'avvio flessibile con i profili
 
   db:
     #image: mariadb:lts

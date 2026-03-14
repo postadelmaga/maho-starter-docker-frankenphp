@@ -4,24 +4,28 @@ set -e
 # Load .env
 test -f .env && source .env
 
-dc="docker compose"
-if ! docker compose version >/dev/null 2>&1; then
-  dc="docker-compose"
-fi
-
-DB_HOST="${DB_HOST:-db}"
 MYSQL_DATABASE="${MYSQL_DATABASE:-maho}"
 MYSQL_USER="${MYSQL_USER:-maho_user}"
 MYSQL_PASSWORD="${MYSQL_PASSWORD:-maho_password}"
+DB_HOST="${DB_HOST:-db}"
+APPNAME="${APPNAME:-boi}"
+
+APP_CONTAINER="${APPNAME}_app"
+
+# Helper: run SQL inside the already-running app container
+run_sql() {
+  docker exec "$APP_CONTAINER" \
+    mysql -h"$DB_HOST" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --skip-ssl "$MYSQL_DATABASE" -e "$1" 2>/dev/null
+}
 
 # --- Show current values ---
 echo ""
 echo "Current URLs:"
-$dc run --rm app mariadb -h"$DB_HOST" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --skip-ssl "$MYSQL_DATABASE" -e "
+run_sql "
 SELECT scope, scope_id, path, value
 FROM core_config_data
 WHERE path IN ('web/unsecure/base_url', 'web/secure/base_url')
-ORDER BY scope, scope_id;" 2>/dev/null
+ORDER BY scope, scope_id;"
 echo ""
 
 # --- Ask for new values ---
@@ -37,7 +41,6 @@ fi
 SQL=""
 
 if [[ -n "$NEW_FRONTEND" ]]; then
-  # Ensure trailing slash
   [[ "$NEW_FRONTEND" != */ ]] && NEW_FRONTEND="${NEW_FRONTEND}/"
   SQL+="
   INSERT INTO core_config_data (scope, scope_id, path, value) VALUES
@@ -57,19 +60,19 @@ fi
 
 # --- Apply ---
 echo "Applying changes..."
-$dc run --rm app mariadb -h"$DB_HOST" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --skip-ssl "$MYSQL_DATABASE" -e "$SQL" 2>/dev/null
+run_sql "$SQL"
 
 # --- Flush cache ---
 echo "Flushing Maho cache..."
-$dc run --rm app ./maho cache:flush
+docker exec "$APP_CONTAINER" ./maho cache:flush
 
 # --- Show updated values ---
 echo ""
 echo "Updated URLs:"
-$dc run --rm app mariadb -h"$DB_HOST" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --skip-ssl "$MYSQL_DATABASE" -e "
+run_sql "
 SELECT scope, scope_id, path, value
 FROM core_config_data
 WHERE path IN ('web/unsecure/base_url', 'web/secure/base_url')
-ORDER BY scope, scope_id;" 2>/dev/null
+ORDER BY scope, scope_id;"
 echo ""
 echo "✅ Done!"

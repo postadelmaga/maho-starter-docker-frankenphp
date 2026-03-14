@@ -118,8 +118,3 @@ http://{$FRONTEND_HOST}, http://{$PHPMYADMIN_HOST} {
     }
 }
 
-# ─── PHPMYADMIN ───────────────────────────────────────────────────────────────
-{$PHPMYADMIN_HOST} {
-    tls internal
-    reverse_proxy maho_phpmyadmin:80
-}
